@@ -75,6 +75,7 @@ def plot_nationwise(df):
 
     plt.figure(figsize=(14, 5))
     plt.plot(national.index, national.values)
+    plt.xticks(rotation=45)
     plt.title("National Daily Enrolments")
     plt.savefig(f"{OUTPUT_DIR}/national_timeseries.png")
     plt.close()
@@ -82,6 +83,7 @@ def plot_nationwise(df):
     monthly = national.resample("M").sum()
     plt.figure(figsize=(14, 5))
     plt.plot(monthly.index, monthly.values)
+    plt.xticks(rotation=45)
     plt.title("National Monthly Enrolments")
     plt.savefig(f"{OUTPUT_DIR}/national_monthly.png")
     plt.close()
@@ -103,8 +105,9 @@ def statewise_analysis(df):
 
     top_states = state_totals.head(10)
 
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(30, 15))
     top_states.plot(kind="bar")
+    plt.xticks(rotation=45)
     plt.title("Top 10 States by Total Enrolment")
     plt.savefig(f"{OUTPUT_DIR}/top_states.png")
     plt.close()
@@ -127,8 +130,9 @@ def distwise_analysis(df):
 
     top_states = dist_totals.head(10)
 
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(30, 15))
     top_states.plot(kind="bar")
+    plt.xticks(rotation=45)
     plt.title("Top 10 States by Total Enrolment")
     plt.savefig(f"{OUTPUT_DIR}/top_dists.png")
     plt.close()
@@ -149,8 +153,9 @@ def distwise_analysis(df):
 def monthwise_analysis(df):
     month_avg = df.groupby("month")["total_enrol"].mean()
 
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(30, 15))
     month_avg.plot(marker="o")
+    plt.xticks(rotation=45)
     plt.title("Average Daily Enrolment by Month")
     plt.savefig(f"{OUTPUT_DIR}/monthwise_avg.png")
     plt.close()
@@ -168,10 +173,11 @@ def monthwise_analysis(df):
 def agewise_analysis(df):
     age_ts = df.groupby("date")[["age_0_5", "age_5_17", "age_18_greater"]].sum()
 
-    plt.figure(figsize=(14, 6))
+    plt.figure(figsize=(32, 15))
     plt.plot(age_ts.index, age_ts["age_0_5"], label="Age 0–5")
     plt.plot(age_ts.index, age_ts["age_5_17"], label="Age 5–17")
     plt.plot(age_ts.index, age_ts["age_18_greater"], label="Age 18+")
+    plt.xticks(rotation=45)
     plt.legend()
     plt.title("Age-wise Enrolments Over Time")
     plt.savefig(f"{OUTPUT_DIR}/agewise_timeseries.png")
@@ -191,8 +197,9 @@ def growth_analysis(df):
     monthly = df.groupby(pd.Grouper(key="date", freq="M"))["total_enrol"].sum()
     growth = monthly.pct_change() * 100
 
-    plt.figure(figsize=(14, 5))
+    plt.figure(figsize=(30, 12))
     plt.plot(growth.index, growth.values)
+    plt.xticks(rotation=45)
     plt.title("Month-on-Month Growth Rate (%)")
     plt.savefig(f"{OUTPUT_DIR}/mom_growth.png")
     plt.close()
@@ -211,9 +218,10 @@ def pseudo_candlestick(df):
     daily = df.groupby("date")["total_enrol"].sum()
     ohlc = daily.resample("M").agg(["min", "max", "mean"])
 
-    plt.figure(figsize=(14, 6))
+    plt.figure(figsize=(24, 6))
     plt.vlines(ohlc.index, ohlc["min"], ohlc["max"])
     plt.plot(ohlc.index, ohlc["mean"], marker="o")
+    plt.xticks(rotation=45)
     plt.title("Monthly Enrolment Range (Min–Max) with Mean")
     plt.savefig(f"{OUTPUT_DIR}/monthly_range.png")
     plt.close()
@@ -228,7 +236,7 @@ def main():
     if os.path.exists(REPORT_PATH):
         os.remove(REPORT_PATH)
 
-    df = load_data("merged.csv")
+    df = load_data("merged_second_iter.csv")
 
     global_summary(df)
     plot_nationwise(df)

@@ -1,4 +1,6 @@
 # Model
+from scipy.stats import zscore
+import seaborn as sns
 import pandas as pd
 import numpy as np
 from catboost import CatBoostRegressor, Pool
@@ -71,9 +73,9 @@ def safe_mape(y_true, y_pred):
 
 CATBOOST_PARAMS = {
     "loss_function": "Poisson",
-    "iterations": 600,
+    "iterations": 1200,
     "learning_rate": 0.05,
-    "depth": 6,
+    "depth": 8,
     "eval_metric": "RMSE",
     "random_seed": 42,
     "early_stopping_rounds": 100,
@@ -181,6 +183,8 @@ def train_and_evaluate(train_df, test_df, label):
         depth=6,
         eval_metric="RMSE",
         random_seed=42,
+        task_type="GPU",
+        border_count=32,
         early_stopping_rounds=100,
         verbose=100,
     )
@@ -277,9 +281,9 @@ def train_final_model(df):
 
     model = CatBoostRegressor(
         loss_function="Poisson",
-        iterations=600,
+        iterations=1200,
         learning_rate=0.05,
-        depth=6,
+        depth=8,
         random_seed=42,
         verbose=100,
     )
@@ -364,6 +368,35 @@ def plot_feature_importance(model):
     plt.show()
 
 
+def detect_anomalies(df):
+    df["zscore_total"] = df.groupby("state")["total_enrol"].transform(
+        lambda x: zscore(x)
+    )
+    anomalies = df[np.abs(df["zscore_total"]) > 3]
+    print("\n=== Anomalies Detected (Z-score > 3) ===")
+    print(
+        anomalies[
+            ["date", "state", "district", "pincode", "total_enrol", "zscore_total"]
+        ].head(10)
+    )
+    print("Number of anomalies:", len(anomalies))
+    # Plot
+    plt.figure(figsize=(14, 7))
+    sns.scatterplot(data=df, x="date", y="total_enrol", hue="state", alpha=0.5)
+    sns.scatterplot(
+        data=anomalies, x="date", y="total_enrol", color="red", s=100, label="Anomaly"
+    )
+    plt.title("Enrolment Anomalies Over Time by State")
+    plt.savefig("anomalies.png")
+    plt.show()
+    print(
+        "Insight: Anomalies in high-volume states like",
+        anomalies["state"].mode()[0] if not anomalies.empty else "None",
+        "- Check for fraud.",
+    )
+    return anomalies
+
+
 def main_sf():
     df = load_and_preprocess("./merged_second_iter.csv")
     plot_aggregate(df, "Historical Total Enrolments (All States)")
@@ -387,9 +420,7 @@ def main_sf():
 
 def main():
     reset_logs()
-
-    df = load_and_preprocess("merged.csv")
-
+    df = load_and_preprocess("merged_second_iter.csv")
     log_header("DATASET SUMMARY")
     log_text(f"Rows: {len(df)}")
     log_text(f"Date range: {df['date'].min()} → {df['date'].max()}")
@@ -423,6 +454,10 @@ def main():
     ].sum()
 
     log_text("\nMONTHLY FORECAST TOTALS:")
+
+    anomalies = detect_anomalies(df)
+    print(f"Anomalies {anomalies}")
+
     log_text(monthly_forecast.to_string())
 
 
